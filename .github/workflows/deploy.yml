@@ -18,13 +18,13 @@ jobs:
           curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
           sudo apt-add-repository "deb https://apt.releases.hashicorp.com $(lsb_release -cs) main"
           sudo apt update && sudo apt install -y vault
-          
+
       - name: Authenticate to Vault
         run: |
           export VAULT_ADDR="http://47.128.235.138:8200/"
           export VAULT_TOKEN="${{ secrets.VAULT_TOKEN }}"
           vault login $VAULT_TOKEN
-          
+
       - name: Retrieve AWS Credentials from Vault
         run: |
           export VAULT_ADDR="http://47.128.235.138:8200/"
@@ -43,6 +43,10 @@ jobs:
           # Mask AWS credentials in the logs for security
           echo "::add-mask::$AWS_ACCESS_KEY_ID"
           echo "::add-mask::$AWS_SECRET_ACCESS_KEY"
+          
+          # Print credentials for debugging
+          echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
+          echo "AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY"
 
       - name: Configure AWS CLI
         run: |
@@ -57,7 +61,7 @@ jobs:
           aws configure set region ap-southeast-1
           
       - name: Verify AWS Credentials
-        run: aws sts get-caller-identity   
+        run: aws sts get-caller-identity
 
       # - name: Run AWS Job
       #   run: |
