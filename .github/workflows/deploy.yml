@@ -21,7 +21,7 @@ jobs:
 
       - name: Authenticate to Vault
         run: |
-          export VAULT_ADDR="${{ secrets.VAULT_ADDR }}"
+          export VAULT_ADDR="http://47.128.235.138:8200"
           export VAULT_TOKEN="${{ secrets.VAULT_TOKEN }}"
           vault login $VAULT_TOKEN
 
