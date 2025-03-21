@@ -1,0 +1,42 @@
+name: AWS Job with Vault
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  aws_job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Vault CLI
+        run: |
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+          sudo apt-add-repository "deb https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+          sudo apt update && sudo apt install -y vault
+
+      - name: Authenticate to Vault
+        run: |
+          export VAULT_ADDR="${{ secrets.VAULT_ADDR }}"
+          export VAULT_TOKEN="${{ secrets.VAULT_TOKEN }}"
+          vault login $VAULT_TOKEN
+
+      - name: Retrieve AWS Credentials from Vault
+        run: |
+          export AWS_CREDS=$(vault read -format=json aws/creds/root)
+          echo "AWS_ACCESS_KEY_ID=$(echo $AWS_CREDS | jq -r '.data.access_key')" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=$(echo $AWS_CREDS | jq -r '.data.secret_key')" >> $GITHUB_ENV
+
+      - name: Configure AWS CLI
+        run: |
+          aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+          aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+          aws configure set region ap-southeast-1
+
+      - name: Run AWS Job
+        run: |
+          aws s3 ls  # Example AWS job
