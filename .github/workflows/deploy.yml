@@ -17,13 +17,17 @@ jobs:
         run: |
           curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
           sudo apt-add-repository "deb https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-          sudo apt update && sudo apt install -y vault
+          sudo apt update && sudo apt install -y vault    
 
       - name: Authenticate to Vault
         run: |
           export VAULT_ADDR="${{ secrets.VAULT_ADDR }}"
           export VAULT_TOKEN="${{ secrets.VAULT_TOKEN }}"
           vault login $VAULT_TOKEN
+
+      - name: Test Vault Connection
+        run: |
+          curl -v $VAULT_ADDR/v1/sys/health
 
       - name: Retrieve AWS Credentials from Vault
         run: |
