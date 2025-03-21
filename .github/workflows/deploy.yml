@@ -21,15 +21,13 @@ jobs:
 
       - name: Authenticate to Vault
         run: |
-          export VAULT_ADDR="http://47.128.235.138:8200"
+          export VAULT_ADDR="http://47.128.235.138:8200/"
           export VAULT_TOKEN="${{ secrets.VAULT_TOKEN }}"
           vault login $VAULT_TOKEN
 
       - name: Debug VAULT_ADDR
         run: |
           echo "VAULT_ADDR is: $VAULT_ADDR"
-        env:
-          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
 
       - name: Test Vault Connection
         run: |
