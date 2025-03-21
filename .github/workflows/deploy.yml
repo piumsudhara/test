@@ -29,6 +29,7 @@ jobs:
         run: |
           export VAULT_ADDR="http://47.128.235.138:8200/"
           export VAULT_TOKEN="${{ secrets.VAULT_TOKEN }}"
+          
           AWS_CREDS=$(vault kv get -format=json aws-static/creds)
           
           # Check if AWS_CREDS is not empty and extract the credentials
@@ -40,10 +41,10 @@ jobs:
           export AWS_ACCESS_KEY_ID=$(echo $AWS_CREDS | jq -r '.data.access_key')
           export AWS_SECRET_ACCESS_KEY=$(echo $AWS_CREDS | jq -r '.data.secret_key')
           
-          # Print credentials for debugging before masking them
+          # Print credentials for debugging
           echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
           echo "AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY"
-
+          
       - name: Mask AWS Credentials in Logs
         run: |
           # Mask AWS credentials in the logs for security after they are used
@@ -57,14 +58,11 @@ jobs:
             echo "Error: AWS credentials are missing"
             exit 1
           fi
-
-          aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-          aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+          
+          # Set the AWS credentials
+          aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
+          aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
           aws configure set region ap-southeast-1
           
       - name: Verify AWS Credentials
         run: aws sts get-caller-identity
-
-      # - name: Run AWS Job
-      #   run: |
-      #     aws s3 ls  # Example AWS job
