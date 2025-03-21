@@ -13,30 +13,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Vault CLI
+      - name: Install Dependencies
         run: |
-          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-          sudo apt-add-repository "deb https://apt.releases.hashicorp.com $(lsb_release -cs) main"
           sudo apt update && sudo apt install -y vault jq
 
-      - name: Authenticate to Vault
+      - name: Authenticate & Retrieve AWS Credentials
+        env:
+          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
         run: |
-          export VAULT_ADDR="${{ secrets.VAULT_ADDR }}"
-          export VAULT_TOKEN="${{ secrets.VAULT_TOKEN }}"
           vault login -no-print $VAULT_TOKEN
-
-      - name: Retrieve AWS Credentials from Vault
-        id: aws_creds
-        run: |
-          export VAULT_ADDR="${{ secrets.VAULT_ADDR }}"
-          export VAULT_TOKEN="${{ secrets.VAULT_TOKEN }}"
-          
           AWS_CREDS=$(vault kv get -format=json aws-static/creds)
-
-          if [ -z "$AWS_CREDS" ]; then
-            echo "Error: AWS credentials not retrieved from Vault"
-            exit 1
-          fi
 
           AWS_ACCESS_KEY_ID=$(echo $AWS_CREDS | jq -r '.data.access_key')
           AWS_SECRET_ACCESS_KEY=$(echo $AWS_CREDS | jq -r '.data.secret_key')
@@ -49,11 +36,6 @@ jobs:
 
       - name: Configure AWS CLI
         run: |
-          if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
-            echo "Error: AWS credentials are missing"
-            exit 1
-          fi
-
           aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
           aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
           aws configure set region ap-southeast-1
