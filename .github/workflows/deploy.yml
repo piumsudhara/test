@@ -15,27 +15,35 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-          sudo apt-add-repository "deb https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-          sudo apt update && sudo apt install -y vault jq
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add - >/dev/null 2>&1
+          sudo apt-add-repository "deb https://apt.releases.hashicorp.com $(lsb_release -cs) main" >/dev/null 2>&1
+          sudo apt update && sudo apt install -y vault jq >/dev/null 2>&1
 
       - name: Authenticate & Retrieve AWS Credentials
         env:
           VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
         run: |
-          vault login -no-print $VAULT_TOKEN
+          vault login -no-print $VAULT_TOKEN >/dev/null 2>&1
           AWS_CREDS=$(vault kv get -format=json aws-static/creds)
-          {
-            echo "AWS_ACCESS_KEY_ID=$(echo $AWS_CREDS | jq -r '.data.access_key')"
-            echo "AWS_SECRET_ACCESS_KEY=$(echo $AWS_CREDS | jq -r '.data.secret_key')"
-          } >> $GITHUB_ENV
 
-      - name: Configure AWS CLI
-        run: |
-          aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID" --profile default >/dev/null 2>&1
-          aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY" --profile default >/dev/null 2>&1
-          aws configure set region ap-southeast-1 --profile default >/dev/null 2>&1
+          AWS_ACCESS_KEY_ID=$(echo $AWS_CREDS | jq -r '.data.access_key')
+          AWS_SECRET_ACCESS_KEY=$(echo $AWS_CREDS | jq -r '.data.secret_key')
+
+          # Mask credentials in logs
+          echo "::add-mask::$AWS_ACCESS_KEY_ID"
+          echo "::add-mask::$AWS_SECRET_ACCESS_KEY"
+
+          # Store AWS credentials in a config file instead of exporting them
+          mkdir -p ~/.aws
+          chmod 700 ~/.aws
+          {
+            echo "[default]"
+            echo "aws_access_key_id=$AWS_ACCESS_KEY_ID"
+            echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY"
+            echo "region=ap-southeast-1"
+          } > ~/.aws/credentials
+          chmod 600 ~/.aws/credentials
 
       - name: Verify AWS Credentials
-        run: aws sts get-caller-identity
+        run: aws sts get-caller-identity >/dev/null 2>&1
