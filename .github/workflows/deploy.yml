@@ -26,12 +26,28 @@ jobs:
           vault login $VAULT_TOKEN
           echo "VAULT_ADDR is: $VAULT_ADDR"
 
+      # - name: Retrieve AWS Credentials from Vault
+      #   run: |
+      #     export AWS_CREDS=$(vault read -format=json aws/creds/root)
+      #     echo "AWS_ACCESS_KEY_ID=$(echo $AWS_CREDS | jq -r '.data.access_key')" >> $GITHUB_ENV
+      #     echo "AWS_SECRET_ACCESS_KEY=$(echo $AWS_CREDS | jq -r '.data.secret_key')" >> $GITHUB_ENV
       - name: Retrieve AWS Credentials from Vault
         run: |
-          export AWS_CREDS=$(vault read -format=json aws/creds/root)
+          export VAULT_ADDR="http://47.128.235.138:8200/"
+          export VAULT_TOKEN="${{ secrets.VAULT_TOKEN }}"
+          
+          # Debug: Check Vault connection
+          curl -v $VAULT_ADDR/v1/sys/health
+          
+          # Read AWS credentials explicitly using VAULT_ADDR
+          AWS_CREDS=$(vault read -format=json aws/creds/root)
+          
           echo "AWS_ACCESS_KEY_ID=$(echo $AWS_CREDS | jq -r '.data.access_key')" >> $GITHUB_ENV
           echo "AWS_SECRET_ACCESS_KEY=$(echo $AWS_CREDS | jq -r '.data.secret_key')" >> $GITHUB_ENV
-
+        env:
+          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+      
       - name: Configure AWS CLI
         run: |
           aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
