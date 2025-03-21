@@ -40,13 +40,15 @@ jobs:
           export AWS_ACCESS_KEY_ID=$(echo $AWS_CREDS | jq -r '.data.access_key')
           export AWS_SECRET_ACCESS_KEY=$(echo $AWS_CREDS | jq -r '.data.secret_key')
           
-          # Mask AWS credentials in the logs for security
-          echo "::add-mask::$AWS_ACCESS_KEY_ID"
-          echo "::add-mask::$AWS_SECRET_ACCESS_KEY"
-          
-          # Print credentials for debugging
+          # Print credentials for debugging before masking them
           echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
           echo "AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY"
+
+      - name: Mask AWS Credentials in Logs
+        run: |
+          # Mask AWS credentials in the logs for security after they are used
+          echo "::add-mask::$AWS_ACCESS_KEY_ID"
+          echo "::add-mask::$AWS_SECRET_ACCESS_KEY"
 
       - name: Configure AWS CLI
         run: |
