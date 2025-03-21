@@ -17,22 +17,25 @@ jobs:
         run: |
           curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
           sudo apt-add-repository "deb https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-          sudo apt update && sudo apt install -y vault    
-
+          sudo apt update && sudo apt install -y vault
+          
       - name: Authenticate to Vault
         run: |
           export VAULT_ADDR="http://47.128.235.138:8200/"
           export VAULT_TOKEN="${{ secrets.VAULT_TOKEN }}"
           vault login $VAULT_TOKEN
-
+          echo "VAULT_ADDR is: $VAULT_ADDR"
+          
       - name: Retrieve AWS Credentials from Vault
         run: |
           export VAULT_ADDR="http://47.128.235.138:8200/"
           export VAULT_TOKEN="${{ secrets.VAULT_TOKEN }}"
-          vault login $VAULT_TOKEN
-          export AWS_CREDS=$(vault read -format=json aws/creds/root)
+          AWS_CREDS=$(vault read -format=json aws/creds/root)
           echo "AWS_ACCESS_KEY_ID=$(echo $AWS_CREDS | jq -r '.data.access_key')" >> $GITHUB_ENV
           echo "AWS_SECRET_ACCESS_KEY=$(echo $AWS_CREDS | jq -r '.data.secret_key')" >> $GITHUB_ENV
+        env:
+          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
           
       - name: Configure AWS CLI
         run: |
