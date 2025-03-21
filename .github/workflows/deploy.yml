@@ -1,4 +1,3 @@
-
 name: AWS Job with Vault
 
 on:
@@ -30,10 +29,12 @@ jobs:
         run: |
           export VAULT_ADDR="http://47.128.235.138:8200/"
           export VAULT_TOKEN="${{ secrets.VAULT_TOKEN }}"
-          vault login $VAULT_TOKEN
           AWS_CREDS=$(vault kv get -format=json aws-static/creds)
-          echo "AWS_ACCESS_KEY_ID=$(echo $AWS_CREDS | jq -r '.data.access_key')" >> $GITHUB_ENV
-          echo "AWS_SECRET_ACCESS_KEY=$(echo $AWS_CREDS | jq -r '.data.secret_key')" >> $GITHUB_ENV
+          export AWS_ACCESS_KEY_ID=$(echo $AWS_CREDS | jq -r '.data.access_key')
+          export AWS_SECRET_ACCESS_KEY=$(echo $AWS_CREDS | jq -r '.data.secret_key')
+          # Mask keys from logs
+          echo "::add-mask::$AWS_ACCESS_KEY_ID"
+          echo "::add-mask::$AWS_SECRET_ACCESS_KEY"
           
       - name: Configure AWS CLI
         run: |
