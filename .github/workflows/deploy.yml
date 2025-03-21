@@ -29,12 +29,9 @@ jobs:
 
           AWS_ACCESS_KEY_ID=$(echo $AWS_CREDS | jq -r '.data.access_key')
           AWS_SECRET_ACCESS_KEY=$(echo $AWS_CREDS | jq -r '.data.secret_key')
-
-          # Mask credentials in logs
           echo "::add-mask::$AWS_ACCESS_KEY_ID"
           echo "::add-mask::$AWS_SECRET_ACCESS_KEY"
 
-          # Store AWS credentials in a config file instead of exporting them
           mkdir -p ~/.aws
           chmod 700 ~/.aws
           {
@@ -46,4 +43,4 @@ jobs:
           chmod 600 ~/.aws/credentials
 
       - name: Verify AWS Credentials
-        run: aws sts get-caller-identity >/dev/null 2>&1
+        run: aws sts get-caller-identity
